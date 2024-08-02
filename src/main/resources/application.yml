@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: bowmeow-product
+
+
+server:
+  port: 8083
+
+
+
+grpc:
+  server:
+    host: localhost
+    port: 9092  # gRPC ?? ??
