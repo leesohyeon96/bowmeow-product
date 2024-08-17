@@ -16,9 +16,9 @@ public class ProductServer {
     private int port;
     private Server server;
 
-    public void initialize( ProductService productService ) {
+    public void initialize( ProductGrpcService productGrpcService) {
         server = ServerBuilder.forPort( port )
-                .addService( productService )
+                .addService(productGrpcService)
                 .build();
     }
 

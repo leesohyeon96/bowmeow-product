@@ -25,10 +25,10 @@ repositories {
 }
 
 dependencies {
-//	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	compileOnly 'org.projectlombok:lombok'
-//	runtimeOnly 'org.postgresql:postgresql'
+	implementation 'mysql:mysql-connector-java:8.0.33' // MySQL JDBC 드라이버
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -45,6 +45,9 @@ dependencies {
 	testImplementation 'io.grpc:grpc-protobuf:1.56.0'
 	testImplementation 'io.grpc:grpc-stub:1.56.0'
 	testImplementation 'io.grpc:grpc-netty:1.56.0'
+
+	// modelMapper 의존성
+	implementation 'org.modelmapper:modelmapper:3.1.1'
 }
 
 tasks.named('test') {

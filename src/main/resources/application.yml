@@ -1,14 +1,25 @@
+# application name 설정
 spring:
   application:
     name: bowmeow-product
 
-
+# port
 server:
   port: 8083
 
-
-
+# gRpc 설정
 grpc:
   server:
     host: localhost
     port: 9092  # gRPC ?? ??
+
+# database 연결 설정
+  datasource:
+    url: jdbc:mysql://bow-meow-product-db:3306/bow-meow-product_db
+    username: bow-meow-product-user # 수정예졍
+    password: bow-meow-product-pass-word # 수정예정
+  jpa:
+    hibernate:
+      ddl-auto: update # 스키마 자동 생성 전략 (create, update, validate, none 중 선택)
+    show-sql: true  # 쿼리 로그를 콘솔에 출력
+    dialect: org.hibernate.dialect.MySQL8Dialect  # MySQL 사용 시 적절한 방언 설정
