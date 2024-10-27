@@ -19,4 +19,6 @@ public class ProductInfoDto {
     private float productAmount;
     /** 상품 설명 */
     private String productDescription;
+    /** 상품 구매 개수 */
+    private Integer productPurchaseCount;
 }

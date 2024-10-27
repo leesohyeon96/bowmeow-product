@@ -1,9 +1,6 @@
 package com.bowmeow.bowmeow_product.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -12,6 +9,7 @@ import java.time.LocalDateTime;
  * Info of Product
  */
 @Getter
+@Setter
 @Entity(name = "products")
 @ToString
 public class ProductInfo {
@@ -39,4 +37,10 @@ public class ProductInfo {
     /** 상품 종료 일자 */
     @Column(name = "product_end_dt")
     private LocalDateTime productEndDt;
+
+    @Transient // 비영속 필드에 포함시킴
+    private Integer productPurchaseCount;
+
+    @Transient
+    private String userId;
 }

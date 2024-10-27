@@ -2,6 +2,7 @@ package com.bowmeow.bowmeow_product.service;
 
 import com.bowmeow.bowmeow_product.ProductServiceGrpc;
 import com.bowmeow.bowmeow_product.ProductServiceProto;
+import com.bowmeow.bowmeow_product.client.ProductClient;
 import com.bowmeow.bowmeow_product.domain.ProductInfo;
 import com.bowmeow.bowmeow_product.repository.ProductRepository;
 import io.grpc.stub.StreamObserver;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ProductGrpcService extends ProductServiceGrpc.ProductServiceImplBase {
     private final ProductRepository productRepository;
+    private ProductClient productClient;
 
     @Override
     public void getProductInfo(ProductServiceProto.ProductRequest request, StreamObserver<ProductServiceProto.ProductInfo> responseObserver) {
@@ -24,9 +26,14 @@ public class ProductGrpcService extends ProductServiceGrpc.ProductServiceImplBas
                 .setProductSno(request.getProductSno())
                 .setProductName(productInfo.getProductNm())
                 .setProductPrice(productInfo.getProductAmount())
+                .setProductPurchaseCount(productInfo.getProductPurchaseCount())
                 .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
+    }
+
+    public ProductServiceProto.CreateOrderResponse createOrder(ProductInfo productInfo) {
+        return productClient.createOrder(productInfo);
     }
 }
