@@ -5,7 +5,7 @@ import "google/protobuf/empty.proto";
 option java_package = "com.bowmeow.bowmeow_product";
 option java_outer_classname = "ProductServiceProto";
 
-service ProductService {
+service ProductPaymentService {
   rpc GetProductInfo (ProductRequest) returns (ProductInfo);
   rpc CreateOrder (ProductInfoForOrder) returns (CreateOrderResponse);
 }
@@ -24,14 +24,14 @@ message ProductInfo {
 message ProductInfoForOrder {
   int32 product_id = 1;               // 상품 아이디
   double product_price = 3;           // 상품 가격
-  string product_name = 2;            // 상품명
-  int32 product_purchase_count = 4;   // 구매수량
-  string user_id = 5;                 // 유저 아이디
+  string product_name = 4;            // 상품명
+  int32 product_purchase_count = 5;   // 구매수량
+  string user_id = 6;                 // 유저 아이디
 }
 
 message CreateOrderResponse {
   string redirect_url = 1; // 리다이렉트 URL
-  OrderProductResponse order = 2;
+  OrderProductResponse order_product_response = 2;
 }
 
 message OrderProductResponse {

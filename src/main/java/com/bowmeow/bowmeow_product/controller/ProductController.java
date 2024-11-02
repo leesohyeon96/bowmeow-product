@@ -1,7 +1,6 @@
 package com.bowmeow.bowmeow_product.controller;
 
 import com.bowmeow.bowmeow_product.ProductServiceProto;
-import com.bowmeow.bowmeow_product.client.ProductClient;
 import com.bowmeow.bowmeow_product.domain.ProductInfo;
 import com.bowmeow.bowmeow_product.dto.ProductInfoDto;
 import com.bowmeow.bowmeow_product.service.ProductService;
@@ -26,7 +25,6 @@ import java.util.List;
 @Slf4j
 public class ProductController {
     private final ModelMapper modelMapper;
-    private ProductClient productClient;
     private final ProductService productService;
 
     /**
@@ -62,8 +60,11 @@ public class ProductController {
         // productInfoDto 에는 productPurchaseCount(구매할 상품 개수), productId(상품 아이디)가 담겨서 옮
         ProductInfo productInfo = modelMapper.map(productInfoDto, ProductInfo.class);
         ProductServiceProto.CreateOrderResponse createOrderResponse = productService.createOrder(productInfo, authorizationHeader);
-        redirectAttributes.addFlashAttribute("orderProductResponse", createOrderResponse.getOrder());
-
+        if (createOrderResponse == null) {
+            // 에러 발생 시 internalServerError 상태코드 반환
+            return ResponseEntity.internalServerError().build();
+        }
+        redirectAttributes.addFlashAttribute("orderProductResponse", createOrderResponse.getOrderProductResponse());
         String redirectUrl = createOrderResponse.getRedirectUrl();
         URI location = URI.create(redirectUrl);
         return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).build();

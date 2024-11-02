@@ -2,6 +2,7 @@ package com.bowmeow.bowmeow_product.service;
 
 import com.bowmeow.bowmeow_product.ProductServiceProto;
 import com.bowmeow.bowmeow_product.domain.ProductInfo;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +31,7 @@ public class ProductService {
         return productJPAService.getProduct(productId);
     }
 
+    @Transactional(rollbackOn = Exception.class)
     public ProductServiceProto.CreateOrderResponse createOrder(ProductInfo productInfo, String authorizationHeader) {
         Integer productId = productInfo.getProductId();
         Integer productPurchaseCount = productInfo.getProductPurchaseCount();
@@ -37,13 +39,14 @@ public class ProductService {
         String userId = jwtService.getExtractUserIdFromToken(token);
 
         // 1. 상품 상제 조회 화면에서 productId를 받아서 [구매하기]버튼 클릭시 조회 > JPA를 통해 재 조회
+        ProductServiceProto.CreateOrderResponse response = null;
         ProductInfo latestProductInfo = getProduct(productId);
         if (latestProductInfo != null) {
             latestProductInfo.setProductPurchaseCount(productPurchaseCount);
             latestProductInfo.setUserId(userId);
             // 2. 데이터 조회 성공하면 gRPC 호출
-            return productGrpcService.createOrder(latestProductInfo);
+            response = productGrpcService.createOrder(latestProductInfo);
         }
-        return null;
+        return response;
     }
 }
