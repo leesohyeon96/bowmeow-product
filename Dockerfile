@@ -5,7 +5,7 @@ FROM openjdk:11-jre-slim
 WORKDIR /app
 
 # 3. 로컬에서 빌드된 JAR 파일을 Docker 컨테이너로 복사
-COPY target/bowmeow-product.jar /app/bowmeow-product.jar
+COPY build/libs/bowmeow-product.jar /app/bowmeow-product.jar
 
 # 4. 컨테이너에서 실행할 명령어 (Spring Boot 애플리케이션 실행)
 CMD ["java", "-jar", "bowmeow-product.jar"]
