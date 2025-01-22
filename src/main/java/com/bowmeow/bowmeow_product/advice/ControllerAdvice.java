@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
  * controller advice 클래스
+ * - controller 에서 발생하는 오류에 대한 처리를 하는 class
  */
 @Slf4j
 @RestControllerAdvice

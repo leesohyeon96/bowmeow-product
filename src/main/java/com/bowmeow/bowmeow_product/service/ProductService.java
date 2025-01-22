@@ -31,6 +31,12 @@ public class ProductService {
         return productJPAService.getProduct(productId);
     }
 
+    /**
+     * 주문서 생성
+     * @param productInfo 생성할 상품 정보
+     * @param authorizationHeader 토큰 정보
+     * @return 생성된 주문서 정보 및 redirect URL
+     */
     @Transactional(rollbackOn = Exception.class)
     public ProductServiceProto.CreateOrderResponse createOrder(ProductInfo productInfo, String authorizationHeader) {
         Integer productId = productInfo.getProductId();
