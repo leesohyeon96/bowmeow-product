@@ -1,5 +1,5 @@
-# 1. Java 기반 이미지로 시작 (예: OpenJDK 11)
-FROM openjdk:11-jre-slim
+# 1. Java 기반 이미지로 시작
+FROM openjdk:21-jre-slim
 
 # 2. 작업 디렉토리 설정
 WORKDIR /app
