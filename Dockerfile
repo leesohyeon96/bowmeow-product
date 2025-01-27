@@ -1,5 +1,5 @@
 # 1. Java 기반 이미지로 시작
-FROM openjdk:21-jre-slim
+FROM openjdk:21-slim
 
 # 2. 작업 디렉토리 설정
 WORKDIR /app

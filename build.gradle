@@ -21,7 +21,7 @@ configurations {
 }
 
 repositories {
-	mavenLocal() // 로컬 Maven 저장소에서 의존성 가져오기 위해 추가
+	mavenLocal()
 	mavenCentral()
 }
 

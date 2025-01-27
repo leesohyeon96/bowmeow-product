@@ -1,0 +1,58 @@
+name: Build and Push Docker Image to Docker Hub
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up environment variable
+        run: echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> $GITHUB_ENV # github secret 에 설정 필요
+
+      - name: Set up JDK21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+
+      # gradle 캐시 저장 및 복원 설정 > 빌드 속도 크게 향상
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          # gradle 캐시 디렉토리 경로 지정 > 빌드에 필요한 의존성과 결과물을 아래 디렉토리에 저장
+          path: ~/.gralde/caches
+          # 캐시 식별하는 고유 키
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # 2가지 갈림길 존재
+      # 1. Docker Hub 에 이미지 업로드
+      # 2. ECR(AWS 내 Docker Registry)에 이미지 푸시 > 얘는 Log in to ECR 한 뒤 > Build Docker Image > Push to ECR 순서임
+      # - 일단은 1번 방법으로 진행하도록 함
+      - name: Build Docker Image
+        run: ./gradlew bootBuildImage
+
+#      - name : Log in to ECR
+#        id : ecr-login-id # 아이디 넣는것
+#        run : |
+#          aws ecr get-login-password(패스워드넣는듯) --region ap-northeast-2(리즌넣는듯)| docker login --username AWS --password-stdin 123456789012.dkr.ecr.ap-northeas-2.amazonaws.com
+
+#      // 여기 사이에 Build Docker Image 가 있음
+
+#      - name : Push to ECR
+#        run : docker push 123456789012.dkr.ecr.ap-northeast-2.amazoneaws.com/bowmeow-payment:latest
+
+      # 보안상의 이유로 stdin 방법 사용
+      - name: Log in to Docker HUb # secrets 만들어야함
+        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+
+      - name: Push Docker Image to Docker Hub
+        run : docker push vkfkswjs26/bowmeow-payment:latest
+

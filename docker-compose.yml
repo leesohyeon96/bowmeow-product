@@ -1,0 +1,63 @@
+version: '3.8'
+services:
+  #   nginx:
+  #    image: nginx
+  #    container_name: bowmeow-nginx
+  #    volumes:
+  #      - ./nginx.conf:/etc/nginx/nginx.conf
+  #    ports:
+  #      - "80:80"
+  #    networks:
+  #      - bowmeow-network
+  # 필요하면 nginx 도 추가
+
+  # or
+  # # 공통 네트워크 생성
+  #docker network create bowmeow-network
+  #
+  ## NGINX 컨테이너를 네트워크에 연결
+  #docker network connect bowmeow-network <nginx-container-name>
+  #
+  ## Product 컨테이너를 네트워크에 연결
+  #docker network connect bowmeow-network <product-container-name>
+
+  db:
+    image: mysql:8.0
+    container_name: bowmeow-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bowmeow_product_db
+      MYSQL_USER: bowmeow
+      MYSQL_PASSWORD: bowmeow1234!
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - bowmeow-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bowmeow-product
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/bowmeow_product_db
+      SPRING_DATASOURCE_USERNAME: bowmeow
+      SPRING_DATASOURCE_PASSWORD: bowmeow1234!
+      JWT_SECRET_KEY: bowmeowsecretkeyesthisisfromsoyeongandsohyeonsecretkeyes # ${JWT_SECRET_KEY} 후에 설정
+    ports:
+      - "8083:8083"
+    depends_on:
+      - db
+    networks:
+      - bowmeow-network
+
+volumes:
+  db_data:
+
+networks:
+  bowmeow-network:
+
+# [docker-compose build 명령어]
+# 본 프로젝트가 위치하는 디렉토리에서 >> docker-compose up --build 입력
