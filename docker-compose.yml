@@ -15,18 +15,26 @@ services:
   # db 설정
   db:
     image: mysql:8.0
+    command:
+      - --lower-case-table-names=1  # 대소문자 구분 비활성화
     container_name: bowmeow-mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: bowmeow_product_db
       MYSQL_USER: bowmeow
       MYSQL_PASSWORD: bowmeow1234!
+      MYSQL_LOWER_CASE_TABLE_NAMES: 1
     ports:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
     networks:
       - bowmeow-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"] # mysql 서버 ping 보냄
+      interval: 10s # 헬스 체크 실행 주기 10초
+      timeout: 5s # 헬스 체크 최대 대기 시간
+      retries: 5 # 헬스체크 실패할 경우 unhealthy 상태로 간주 전 5번 시도
   # app 설정
   app:
     build:
@@ -34,14 +42,15 @@ services:
       dockerfile: Dockerfile
     container_name: bowmeow-product
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/bowmeow_product_db
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/bowmeow_product_db?useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: bowmeow
       SPRING_DATASOURCE_PASSWORD: bowmeow1234!
       JWT_SECRET_KEY: bowmeowsecretkeyesthisisfromsoyeongandsohyeonsecretkeyes # ${JWT_SECRET_KEY} 후에 설정
     ports:
       - "8083:8083"
     depends_on:
-      - db
+      db :
+        condition: service_healthy # healthy 체크된 db 후에 컨테이너화
     networks:
       - bowmeow-network
 volumes:

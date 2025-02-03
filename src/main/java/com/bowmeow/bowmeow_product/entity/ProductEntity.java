@@ -1,7 +1,9 @@
-package com.bowmeow.bowmeow_product.domain;
+package com.bowmeow.bowmeow_product.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
@@ -11,11 +13,12 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity(name = "products")
+@Table(name = "products")
 @ToString
-public class ProductInfo {
+public class ProductEntity {
     /** 상품 ID */
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer productId;
 
     /** 상품 명 */
