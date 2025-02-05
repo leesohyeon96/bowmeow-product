@@ -7,8 +7,6 @@ spring:
 
   # database 연결 설정
   datasource:
-    # todo : 테이블 그냥 수동으로 만들고 API 들 테스트 하기
-    # 그거 오케이되면 인제 원격용 인프라 생성
 #    url: jdbc:mysql://db:3306/bowmeow_product_db?useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
 #    username: bowmeow
 #    password: bowmeow1234!

@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
@@ -56,3 +56,16 @@ jobs:
       - name: Push Docker Image to Docker Hub
         run : docker push vkfkswjs26/bowmeow-payment:latest
 
+# todo : 상용용 인프라 흐름
+# 1. remote main 브랜치에 push
+# 2. product 서비스가 이미지화 되어 docker hub 에 push
+# 3. aws ec2에 Watchtower 가 docker-compose.yml에 설정해놓은 것에 의해서 매 시간 docker hub 에 새 이미지 확인함
+# 4. 새 이미 발견 하면 ec2(docker, docker-compose 는 수동으로 깔려있어야함) 가 내 이미지를 pull 해서 컨테이너 재시작함 (이때, docker-compose.yml 파일 읽어서 필요한 다른 이미지들도 컨테이너화함)
+# 5. WATCHTOWER_CLEANUP=true 설정으로 이전 이미지 자동삭제
+# todo : 여부터 더 자세히!
+# 6. ec2 에 kubectl, minikube(알아봐야함-> 아마 쿠버네티스 클러스터 관련임) 깔아서 [여러노드(ec2인스턴스)로 구성된 클러스터를 만들고 그 위에서 여러 서비스(msa)를 효율적으로 관리]하도록 함
+# 7. 그리고 각 서비스의 프로젝트에 별도의 Deployment.yml 필요
+# 8. 서비스 간 통신을 위해 Service 리소스 생성 필요
+# 9. 외부 트래픽 관리위해 Ingress 설정
+# 10. 롤링 업데이트를 통해 무중단 배포 구현 ! (컨테이너 서비스 당 3개의 레플리카있다고 하면 1개씩 컨테이너업데이트 시켜서 무중단한다는거임ㅇㅇ)
+# 11. (필요에 따라 Sping cloud Kubenetes 사용해서 서비스 디스커버리, 로드 밸런싱 구현 가능)

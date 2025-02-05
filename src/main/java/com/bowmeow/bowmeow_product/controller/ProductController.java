@@ -69,4 +69,8 @@ public class ProductController {
         URI location = URI.create(redirectUrl);
         return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).build();
     }
+
+    // todo:1 상품 생성 API 필요!
+    // todo:2 주문서 생성에서 일단 jwt bearea 토큰 필요한데 서영이 그 jwt 토큰 만들어서
+    // 어디다 저장하는지 물어보깅 ㅇㅇ
 }
