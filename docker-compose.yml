@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   # nginx 설정
-  nginx:
+  bowmeow-product-nginx:
     image: nginx:latest
     container_name: bowmeow-nginx
     volumes:
@@ -13,16 +13,16 @@ services:
     depends_on:
       - app
   # db 설정
-  db:
+  bowmeow-product-db:
     image: mysql:8.0
     command:
       - --lower-case-table-names=1  # 대소문자 구분 비활성화
     container_name: bowmeow-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${JWT_SECRET_KEY}
       MYSQL_DATABASE: bowmeow_product_db
-      MYSQL_USER: bowmeow
-      MYSQL_PASSWORD: bowmeow1234!
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_LOWER_CASE_TABLE_NAMES: 1
     ports:
       - "3306:3306"
@@ -36,23 +36,48 @@ services:
       timeout: 5s # 헬스 체크 최대 대기 시간
       retries: 5 # 헬스체크 실패할 경우 unhealthy 상태로 간주 전 5번 시도
   # app 설정
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: bowmeow-product
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/bowmeow_product_db?useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
-      SPRING_DATASOURCE_USERNAME: bowmeow
-      SPRING_DATASOURCE_PASSWORD: bowmeow1234!
-      JWT_SECRET_KEY: bowmeowsecretkeyesthisisfromsoyeongandsohyeonsecretkeyes # ${JWT_SECRET_KEY} 후에 설정
+  bowmeow-product-app:
+
+    # local 용
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    container_name: bowmeow-product
+    image: ${DOCKER_HUB_USERNAME}/bowmeow-product:latest
     ports:
       - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/bowmeow_product_db?useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
     depends_on:
       db :
         condition: service_healthy # healthy 체크된 db 후에 컨테이너화
     networks:
       - bowmeow-network
+
+  # 매시간 새로운 Docker 이미지를 확인하고, 새 이미지가 있으면 자동으로 업데이트
+  watchtower-for-app:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --schedule "0 0 0 * * *" bowmeow-product-app
+    environment:
+      - TZ=Asia/Seoul
+      # 이전 이미지 자동삭제
+      - WATCHTOWER_CLEANUP=true
+
+  # 24시간마다 확인
+  watchower-for-except-app:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --schedule "0 0 0 * * 0" bowmeow-product-db bowmeow-product-nginx
+    environment:
+      - TZ=Asia/Seoul
+      - WATCHTOWER_CLEANUP=true
+
 volumes:
   db_data:
 networks:
