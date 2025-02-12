@@ -78,9 +78,19 @@ jobs:
         run: |
           docker push $DOCKER_HUB_USERNAME/product-service:latest
           docker push $DOCKER_HUB_USERNAME/product-service:${{ github.sha }}
+
+      # Kubernetes Secret 생성 (github secret 에 저장해놓은 환경변수들을 kubenetes 내에 시크릿에 값 저장 > 후에 컨테이너 런타임시 deployment.yml 에서 secert key 값으로 여기서 저장해놓은 환경변수값들 조회할 수 있음)
+      - name: Create Kubernetes Secret
+        run: |
+          kubectl create secret generic bowmeow-secrets \
+            --from-literal=jwt-secret-key=${{ secrets.JWT_SECRET_KEY }} \
+            --from-literal=db-username=${{ secrets.DB_USERNAME }} \
+            --from-literal=db-password=${{ secrets.DB_PASSWORD }}
       
-      # kubernetes 배포 설정 파일 자동 업로드 >> 컨테이너 이미지 태그를 최신 SHA 로 업데이트 ex) image: <기존값> --> image: <새로운 Docker 이미지 태그>
-      - name: Update Kubernetes manifests
+      
+
+        # kubernetes 배포 설정 파일 자동 업로드 >> 컨테이너 이미지 태그를 최신 SHA 로 업데이트 ex) image: <기존값> --> image: <새로운 Docker 이미지 태그>
+      - name: Update Kubernetes manifests with new image tag
         run: |
           sed -i 's|image: .*|image: $DOCKER_HUB_USERNAME/bowmeow-product:${{ github.sha }}|' k8s/deployment.yaml
 
@@ -92,15 +102,17 @@ jobs:
           git add k8s/deployment.yaml
           git commit -m "Update image tag to ${{ github.sha }}"
           git push
+          
 
 
-# todo : 상용용 인프라 흐름 && [이거하면됨] ci/cd 아래 흐름대로 짜기!!
+# [상용 용 인프라 흐름]
 # 1. remote main 브랜치에 push
 # 2. product 서비스가 이미지화 되어 docker hub 에 push
 # 3. aws ec2에 Watchtower 가 docker-compose.yml에 설정해놓은 것에 의해서 매 시간 docker hub 에 새 이미지 확인함
 # 4. 새 이미 발견 하면 ec2(docker, docker-compose 는 수동으로 깔려있어야함) 가 내 이미지를 pull 해서 컨테이너 재시작함 (이때, docker-compose.yml 파일 읽어서 필요한 다른 이미지들도 컨테이너화함)
 # 5. WATCHTOWER_CLEANUP=true 설정으로 이전 이미지 자동삭제
-# todo : 여부터 더 자세히!
+
+# 여부터는 deployment.yml 로 ㄱㄱ
 # 6. ec2 에 kubectl, minikube(알아봐야함-> 아마 쿠버네티스 클러스터 관련임) 깔아서 [여러노드(ec2인스턴스)로 구성된 클러스터를 만들고 그 위에서 여러 서비스(msa)를 효율적으로 관리]하도록 함
 # 7. 그리고 각 서비스의 프로젝트에 별도의 Deployment.yml 필요
 # 8. 서비스 간 통신을 위해 Service 리소스 생성 필요

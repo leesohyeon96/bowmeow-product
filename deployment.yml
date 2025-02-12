@@ -1,0 +1,81 @@
+# [상용 용 인프라 흐름]
+## 6. ec2 에 kubectl, minikube(알아봐야함-> 아마 쿠버네티스 클러스터 관련임) 깔아서 [여러노드(ec2인스턴스)로 구성된 클러스터를 만들고 그 위에서 여러 서비스(msa)를 효율적으로 관리]하도록 함
+## 7. 그리고 각 서비스의 프로젝트에 별도의 Deployment.yml 필요
+## 8. 서비스 간 통신을 위해 Service 리소스 생성 필요
+## 9. 외부 트래픽 관리위해 Ingress 설정
+## 10. 롤링 업데이트를 통해 무중단 배포 구현 ! (컨테이너 서비스 당 3개의 레플리카있다고 하면 1개씩 컨테이너업데이트 시켜서 무중단한다는거임ㅇㅇ)
+## 11. (필요에 따라 Sping cloud Kubenetes 사용해서 서비스 디스커버리, 로드 밸런싱 구현 가능)
+# --> todo: kubenetes 설정 짜고 함 배포해보긔!! aws ec2에 ! 
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bowmeow-product
+  labels:
+    app: bowmeow-product
+
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bowmeow-product
+
+  template:
+    metadata:
+      labels:
+        app: bowmeow-product
+
+    spec:
+      containers:
+      - name: bowmeow-product-container
+#        image: $DOCKER_HUB_USERNAME/bowmeow-product:latest
+        image: vkfkswjs26/bowmeow-product:latest
+        ports:
+        - containerPort: 8083 # product 같은 경우 8083으로
+
+        # 실제 비밀값은 kubectl 에 명령어로 [쿠버네티스 클러스터]에 생성하기
+        # - kubectl create secret generic bowmeow-secrets \
+        #  --from-literal=jwt-secret-key=실제비밀키 \
+        #  --from-literal=db-username=실제사용자이름 \
+        #  --from-literal=db-password=실제비밀번호
+        env:
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: bowmeow-secrets
+              key: jwt-secret-key
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:mysql://bowmeow-mysql:3306/bowmeow_product_db
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: bowmeow-secrets
+              key: db-username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bowmeow-secrets
+              key: db-password
+
+
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 15

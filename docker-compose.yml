@@ -19,7 +19,7 @@ services:
       - --lower-case-table-names=1  # 대소문자 구분 비활성화
     container_name: bowmeow-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${JWT_SECRET_KEY}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: bowmeow_product_db
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
