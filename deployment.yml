@@ -35,11 +35,6 @@ spec:
         ports:
         - containerPort: 8083 # product 같은 경우 8083으로
 
-        # 실제 비밀값은 kubectl 에 명령어로 [쿠버네티스 클러스터]에 생성하기
-        # - kubectl create secret generic bowmeow-secrets \
-        #  --from-literal=jwt-secret-key=실제비밀키 \
-        #  --from-literal=db-username=실제사용자이름 \
-        #  --from-literal=db-password=실제비밀번호
         env:
         - name: JWT_SECRET_KEY
           valueFrom:
@@ -61,21 +56,29 @@ spec:
 
 
         resources:
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
-          requests:
-            cpu: "200m"
-            memory: "256Mi"
-        readinessProbe:
-          httpGet:
+          limits: # 컨테이너가 사용할 수 있는 최대 리소스 양
+            cpu: "500m" # 최대 0.5 코어
+            memory: "512Mi" # 최대 메모리 512 MB
+          requests: # 컨테이너에 보장되는 최소 리소스 양
+            cpu: "200m" # 최소 0.2 코어
+            memory: "256Mi" # 최소 256 MB
+        readinessProbe: # 애플리케이션이 요청을 처리할 준비됬는지 확인
+          httpGet: # get 요청으로
+            path: /actuator/health # /actuator/health 엔드포인트를(SpringBoot Actuator에서 제공) 8080으로 검사
+            port: 8080
+          initialDelaySeconds: 30 # 컨테이너 시작 후 30초후에 첫 검사 시작
+          periodSeconds: 10 # 10초마다 주기적으로 검사
+        livenessProbe: # 애플리케이션 정상적으로 동작중인지 검사
+          httpGet: # get 요청으로
             path: /actuator/health
             port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        livenessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 8080
-          initialDelaySeconds: 60
-          periodSeconds: 15
+          initialDelaySeconds: 60 # 컨테이너 시작 후 60초에 첫 검사
+          periodSeconds: 15 # 15초마다 주기적으로 검사
+
+  # 롤링 업데이트 전략 구현
+  strategy:
+    type: RollingUpdate # 롤링 업데이트 방식으로 배포 수행(= 무중단 배포 가능)
+    rollingUpdate:
+      maxSurge: 1 # 업데이트 중 원하는 파드 수보다 최대 1개 더 많은 파드 생성 가능 (새 버전의 파드를 먼저 생성하여 서비스 가용성 유지)
+      # ex) replocas: 3으로 설정되있으면 업데이트 과정 중 최대 4개의 파드가 동시에 존재할 수 있다는 말
+      maxUnavailable: 0 # 업데이트 중 사용 불가능한 파드의 수를 0으로 유지 (항상 모든 파드가 가용 상태를 유지하도록 보장)

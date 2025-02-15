@@ -86,8 +86,6 @@ jobs:
             --from-literal=jwt-secret-key=${{ secrets.JWT_SECRET_KEY }} \
             --from-literal=db-username=${{ secrets.DB_USERNAME }} \
             --from-literal=db-password=${{ secrets.DB_PASSWORD }}
-      
-      
 
         # kubernetes 배포 설정 파일 자동 업로드 >> 컨테이너 이미지 태그를 최신 SHA 로 업데이트 ex) image: <기존값> --> image: <새로운 Docker 이미지 태그>
       - name: Update Kubernetes manifests with new image tag
@@ -102,8 +100,6 @@ jobs:
           git add k8s/deployment.yaml
           git commit -m "Update image tag to ${{ github.sha }}"
           git push
-          
-
 
 # [상용 용 인프라 흐름]
 # 1. remote main 브랜치에 push
