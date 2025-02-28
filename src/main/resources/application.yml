@@ -2,6 +2,26 @@
 spring:
   application:
     name: bowmeow-product
+  profiles:
+    active: local
+
+  # database 연결 설정
+  datasource:
+#    url: jdbc:mysql://db:3306/bowmeow_product_db?useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+#    username: bowmeow
+#    password: bowmeow1234!
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update  # 테이블 자동 생성 활성화
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect  # MySQL 8.x용 방언
+        show-sql: true
+        format_sql: true
 
 # port
 server:
@@ -11,15 +31,12 @@ server:
 grpc:
   server:
     host: localhost
-    port: 9092  # gRPC ?? ??
+    port: 9092  # gRPC port
 
-# database 연결 설정
-  datasource:
-    url: jdbc:mysql://bow-meow-product-db:3306/bow-meow-product_db
-    username: bow-meow-product-user # 수정예졍
-    password: bow-meow-product-pass-word # 수정예정
-  jpa:
-    hibernate:
-      ddl-auto: update # 스키마 자동 생성 전략 (create, update, validate, none 중 선택)
-    show-sql: true  # 쿼리 로그를 콘솔에 출력
-    dialect: org.hibernate.dialect.MySQL8Dialect  # MySQL 사용 시 적절한 방언 설정
+---
+
+spring:
+  profiles:
+    active: live
+
+# 운영에서 db 설정은 none || validate

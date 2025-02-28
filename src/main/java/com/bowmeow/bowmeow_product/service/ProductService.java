@@ -1,7 +1,7 @@
 package com.bowmeow.bowmeow_product.service;
 
 import com.bowmeow.bowmeow_product.ProductServiceProto;
-import com.bowmeow.bowmeow_product.domain.ProductInfo;
+import com.bowmeow.bowmeow_product.entity.ProductEntity;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,7 @@ public class ProductService {
      * 상품 전체 목록 조회
      * @return 상품 목록
      */
-    public List<ProductInfo> getProducts() {
+    public List<ProductEntity> getProducts() {
         return productJPAService.getProducts();
     }
 
@@ -27,7 +27,7 @@ public class ProductService {
      * 상품 상세 조회
      * @return 상품 상세 정보
      */
-    public ProductInfo getProduct(Integer productId) {
+    public ProductEntity getProduct(Integer productId) {
         return productJPAService.getProduct(productId);
     }
 
@@ -38,7 +38,7 @@ public class ProductService {
      * @return 생성된 주문서 정보 및 redirect URL
      */
     @Transactional(rollbackOn = Exception.class)
-    public ProductServiceProto.CreateOrderResponse createOrder(ProductInfo productInfo, String authorizationHeader) {
+    public ProductServiceProto.CreateOrderResponse createOrder(ProductEntity productInfo, String authorizationHeader) {
         Integer productId = productInfo.getProductId();
         Integer productPurchaseCount = productInfo.getProductPurchaseCount();
         String token = authorizationHeader.replace("Bearer ", "");
@@ -46,7 +46,7 @@ public class ProductService {
 
         // 1. 상품 상제 조회 화면에서 productId를 받아서 [구매하기]버튼 클릭시 조회 > JPA를 통해 재 조회
         ProductServiceProto.CreateOrderResponse response = null;
-        ProductInfo latestProductInfo = getProduct(productId);
+        ProductEntity latestProductInfo = getProduct(productId);
         if (latestProductInfo != null) {
             latestProductInfo.setProductPurchaseCount(productPurchaseCount);
             latestProductInfo.setUserId(userId);

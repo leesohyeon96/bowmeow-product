@@ -2,7 +2,7 @@ package com.bowmeow.bowmeow_product.client;
 
 import com.bowmeow.bowmeow_product.ProductPaymentServiceGrpc;
 import com.bowmeow.bowmeow_product.ProductServiceProto;
-import com.bowmeow.bowmeow_product.domain.ProductInfo;
+import com.bowmeow.bowmeow_product.entity.ProductEntity;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -27,7 +27,7 @@ public class ProductPaymentClient {
      * 결제를 위한 주문서 생성
      * @param productInfo 상품 정보
      */
-    public ProductServiceProto.CreateOrderResponse createOrder(ProductInfo productInfo) {
+    public ProductServiceProto.CreateOrderResponse createOrder(ProductEntity productInfo) {
         ProductServiceProto.CreateOrderResponse response = null;
         try {
             ProductServiceProto.ProductInfoForOrder request = ProductServiceProto.ProductInfoForOrder.newBuilder()

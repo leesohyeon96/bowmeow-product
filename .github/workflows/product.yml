@@ -1,0 +1,117 @@
+name: Build and Push Docker Image to Docker Hub
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # github secret 의 환경변수 > GITHUB_ENV 저장
+      - name: Set up environment variable
+        run: |
+          echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> $GITHUB_ENV
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> $GITHUB_ENV
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
+          echo "DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}" >> $GITHUB_ENV
+          echo "DOCKER_HUB_USERNAME=${{ secrets.DOCKER_HUB_USERNAME }}" >> $GITHUB_ENV
+          echo "BOW_MEOW_DOCKER_HUB_LOGIN_ACCESS_TOKEN=${{ secrets.BOW_MEOW_DOCKER_HUB_LOGIN_ACCESS_TOKEN }}" >> $GITHUB_ENV
+
+      - name: Set up JDK21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+
+      # [주의!] main 브랜치 빌드 빈도 낮을것이라 생각하여 주석 처리 (후에 빌드 빈도 늘어나는 경우 사용!)
+      # gradle 캐시 저장 및 복원 설정 > 빌드 속도 크게 향상
+#      - name: Cache Gradle
+#        uses: actions/cache@v3
+#        with:
+#          # gradle 캐시 디렉토리 경로 지정 > 빌드에 필요한 의존성과 결과물을 아래 디렉토리에 저장
+#          # 목적 : 다음 실행시 저장된 캐시를 불러와 불필요한 다운로드 방지
+#          path: ~/.gralde/caches
+#          # 캐시 식별하는 고유 키
+#          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+#          restore-keys: |
+#            ${{ runner.os }}-gradle-
+
+
+      # 2가지 갈림길 존재
+      # 1. Docker Hub 에 이미지 업로드
+      # 2. ECR(AWS 내 Docker Registry)에 이미지 푸시 > 얘는 Log in to ECR 한 뒤 > Build Docker Image > Push to ECR 순서임
+      # - 일단은 1번 방법으로 진행하도록 함
+
+#      - name : Log in to ECR
+#        id : ecr-login-id # 아이디 넣는것
+#        run : |
+#          aws ecr get-login-password(패스워드넣는듯) --region ap-northeast-2(리즌넣는듯)| docker login --username AWS --password-stdin 123456789012.dkr.ecr.ap-northeas-2.amazonaws.com
+
+#      // 여기 사이에 Build Docker Image 가 있음
+
+#      - name : Push to ECR
+#        run : docker push 123456789012.dkr.ecr.ap-northeast-2.amazoneaws.com/bowmeow-payment:latest
+
+      # gradle 빌드 > build/libs 에 .jar 파일 생성 > .jar 파일을 포함한 Docker 이미지 생성
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      # Docker Hub 로그인 >> 보안상의 이유로 stdin 방법 사용
+      - name: Log in to Docker HUb # secrets 만들어야함
+        run: echo "$BOW_MEOW_DOCKER_HUB_LOGIN_ACCESS_TOKEN" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
+
+      # Docker 이미지 빌드
+      - name: Build Docker Image
+        run: docker build -t $DOCKER_HUB_USERNAME/bowmeow-product:latest .
+
+      # 최신(latest) 태그 + Github SHA 기반 태그 추가
+      - name: Tag Docker Image
+        run: docker tag $DOCKER_HUB_USERNAME/bowmeow-product:latest $DOCKER_HUB_USERNAME/bowmeow-product:${{ github.sha }}
+
+      # Docker Hub 에 이미지 푸시 > latest 버전과 SHA 버전 둘다 > 이유는 : 버전관리 & latest 태그로 가장 최신 버전 쉽게 가져올 수 있도록 함
+      - name: Push Docker Image to Docker Hub
+        run: |
+          docker push $DOCKER_HUB_USERNAME/product-service:latest
+          docker push $DOCKER_HUB_USERNAME/product-service:${{ github.sha }}
+
+      # Kubernetes Secret 생성 (github secret 에 저장해놓은 환경변수들을 kubenetes 내에 시크릿에 값 저장 > 후에 컨테이너 런타임시 deployment.yml 에서 secert key 값으로 여기서 저장해놓은 환경변수값들 조회할 수 있음)
+      - name: Create Kubernetes Secret
+        run: |
+          kubectl create secret generic bowmeow-secrets \
+            --from-literal=jwt-secret-key=${{ secrets.JWT_SECRET_KEY }} \
+            --from-literal=db-username=${{ secrets.DB_USERNAME }} \
+            --from-literal=db-password=${{ secrets.DB_PASSWORD }}
+
+        # kubernetes 배포 설정 파일 자동 업로드 >> 컨테이너 이미지 태그를 최신 SHA 로 업데이트 ex) image: <기존값> --> image: <새로운 Docker 이미지 태그>
+      - name: Update Kubernetes manifests with new image tag
+        run: |
+          sed -i 's|image: .*|image: $DOCKER_HUB_USERNAME/bowmeow-product:${{ github.sha }}|' k8s/deployment.yaml
+
+      # Github 저장소에 변경 내용 commit & push >> kubernetes 클러스터가 변경된 배포 파일 감지하도록 하는 트리거 용도
+      - name: Commit and push updated manifests
+        run: | # github actions 가 자동으로 커밋 & 푸시할 수 있도록 계정 설정
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add k8s/deployment.yaml
+          git commit -m "Update image tag to ${{ github.sha }}"
+          git push
+
+# [상용 용 인프라 흐름]
+# 1. remote main 브랜치에 push
+# 2. product 서비스가 이미지화 되어 docker hub 에 push
+# 3. aws ec2에 Watchtower 가 docker-compose.yml에 설정해놓은 것에 의해서 매 시간 docker hub 에 새 이미지 확인함
+# 4. 새 이미 발견 하면 ec2(docker, docker-compose 는 수동으로 깔려있어야함) 가 내 이미지를 pull 해서 컨테이너 재시작함 (이때, docker-compose.yml 파일 읽어서 필요한 다른 이미지들도 컨테이너화함)
+# 5. WATCHTOWER_CLEANUP=true 설정으로 이전 이미지 자동삭제
+
+# 여부터는 deployment.yml 로 ㄱㄱ
+# 6. ec2 에 kubectl, minikube(알아봐야함-> 아마 쿠버네티스 클러스터 관련임) 깔아서 [여러노드(ec2인스턴스)로 구성된 클러스터를 만들고 그 위에서 여러 서비스(msa)를 효율적으로 관리]하도록 함
+# 7. 그리고 각 서비스의 프로젝트에 별도의 Deployment.yml 필요
+# 8. 서비스 간 통신을 위해 Service 리소스 생성 필요
+# 9. 외부 트래픽 관리위해 Ingress 설정
+# 10. 롤링 업데이트를 통해 무중단 배포 구현 ! (컨테이너 서비스 당 3개의 레플리카있다고 하면 1개씩 컨테이너업데이트 시켜서 무중단한다는거임ㅇㅇ)
+# 11. (필요에 따라 Sping cloud Kubenetes 사용해서 서비스 디스커버리, 로드 밸런싱 구현 가능)

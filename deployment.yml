@@ -1,0 +1,84 @@
+# [상용 용 인프라 흐름]
+## 6. ec2 에 kubectl, minikube(알아봐야함-> 아마 쿠버네티스 클러스터 관련임) 깔아서 [여러노드(ec2인스턴스)로 구성된 클러스터를 만들고 그 위에서 여러 서비스(msa)를 효율적으로 관리]하도록 함
+## 7. 그리고 각 서비스의 프로젝트에 별도의 Deployment.yml 필요
+## 8. 서비스 간 통신을 위해 Service 리소스 생성 필요
+## 9. 외부 트래픽 관리위해 Ingress 설정
+## 10. 롤링 업데이트를 통해 무중단 배포 구현 ! (컨테이너 서비스 당 3개의 레플리카있다고 하면 1개씩 컨테이너업데이트 시켜서 무중단한다는거임ㅇㅇ)
+## 11. (필요에 따라 Sping cloud Kubenetes 사용해서 서비스 디스커버리, 로드 밸런싱 구현 가능)
+# --> todo: kubenetes 설정 짜고 함 배포해보긔!! aws ec2에 ! 
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bowmeow-product
+  labels:
+    app: bowmeow-product
+
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bowmeow-product
+
+  template:
+    metadata:
+      labels:
+        app: bowmeow-product
+
+    spec:
+      containers:
+      - name: bowmeow-product-container
+#        image: $DOCKER_HUB_USERNAME/bowmeow-product:latest
+        image: vkfkswjs26/bowmeow-product:latest
+        ports:
+        - containerPort: 8083 # product 같은 경우 8083으로
+
+        env:
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: bowmeow-secrets
+              key: jwt-secret-key
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:mysql://bowmeow-mysql:3306/bowmeow_product_db
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: bowmeow-secrets
+              key: db-username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bowmeow-secrets
+              key: db-password
+
+
+        resources:
+          limits: # 컨테이너가 사용할 수 있는 최대 리소스 양
+            cpu: "500m" # 최대 0.5 코어
+            memory: "512Mi" # 최대 메모리 512 MB
+          requests: # 컨테이너에 보장되는 최소 리소스 양
+            cpu: "200m" # 최소 0.2 코어
+            memory: "256Mi" # 최소 256 MB
+        readinessProbe: # 애플리케이션이 요청을 처리할 준비됬는지 확인
+          httpGet: # get 요청으로
+            path: /actuator/health # /actuator/health 엔드포인트를(SpringBoot Actuator에서 제공) 8080으로 검사
+            port: 8080
+          initialDelaySeconds: 30 # 컨테이너 시작 후 30초후에 첫 검사 시작
+          periodSeconds: 10 # 10초마다 주기적으로 검사
+        livenessProbe: # 애플리케이션 정상적으로 동작중인지 검사
+          httpGet: # get 요청으로
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60 # 컨테이너 시작 후 60초에 첫 검사
+          periodSeconds: 15 # 15초마다 주기적으로 검사
+
+  # 롤링 업데이트 전략 구현
+  strategy:
+    type: RollingUpdate # 롤링 업데이트 방식으로 배포 수행(= 무중단 배포 가능)
+    rollingUpdate:
+      maxSurge: 1 # 업데이트 중 원하는 파드 수보다 최대 1개 더 많은 파드 생성 가능 (새 버전의 파드를 먼저 생성하여 서비스 가용성 유지)
+      # ex) replocas: 3으로 설정되있으면 업데이트 과정 중 최대 4개의 파드가 동시에 존재할 수 있다는 말
+      maxUnavailable: 0 # 업데이트 중 사용 불가능한 파드의 수를 0으로 유지 (항상 모든 파드가 가용 상태를 유지하도록 보장)

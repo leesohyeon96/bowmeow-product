@@ -1,6 +1,6 @@
 package com.bowmeow.bowmeow_product.service;
 
-import com.bowmeow.bowmeow_product.domain.ProductInfo;
+import com.bowmeow.bowmeow_product.entity.ProductEntity;
 import com.bowmeow.bowmeow_product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,7 @@ public class ProductJPAService {
      * 상품 전체 목록 조회
      * @return 상품 목록
      */
-    public List<ProductInfo> getProducts() {
+    public List<ProductEntity> getProducts() {
         return productRepository.findAll();
     }
 
@@ -25,7 +25,7 @@ public class ProductJPAService {
      * 상품 상세 조회
      * @return 상품 상세 정보
      */
-    public ProductInfo getProduct(Integer productId) {
+    public ProductEntity getProduct(Integer productId) {
         return productRepository.findById(Long.valueOf(productId))
                 .orElseThrow(() -> new RuntimeException("Product not found"));
     }

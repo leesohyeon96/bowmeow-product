@@ -3,7 +3,7 @@ package com.bowmeow.bowmeow_product.service;
 import com.bowmeow.bowmeow_product.ProductPaymentServiceGrpc;
 import com.bowmeow.bowmeow_product.ProductServiceProto;
 import com.bowmeow.bowmeow_product.client.ProductPaymentClient;
-import com.bowmeow.bowmeow_product.domain.ProductInfo;
+import com.bowmeow.bowmeow_product.entity.ProductEntity;
 import com.bowmeow.bowmeow_product.repository.ProductRepository;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class ProductGrpcService extends ProductPaymentServiceGrpc.ProductPayment
     @Override
     public void getProductInfo(ProductServiceProto.ProductRequest request, StreamObserver<ProductServiceProto.ProductInfo> responseObserver) {
         // 상품 정보 조회
-        ProductInfo productInfo = productRepository.findById((long) request.getProductSno())
+        ProductEntity productInfo = productRepository.findById((long) request.getProductSno())
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
         // 상품 정보 반환 데이터 세팅
@@ -37,7 +37,7 @@ public class ProductGrpcService extends ProductPaymentServiceGrpc.ProductPayment
         responseObserver.onCompleted();
     }
 
-    public ProductServiceProto.CreateOrderResponse createOrder(ProductInfo productInfo) {
+    public ProductServiceProto.CreateOrderResponse createOrder(ProductEntity productInfo) {
         return productPaymentClient.createOrder(productInfo);
     }
 }
